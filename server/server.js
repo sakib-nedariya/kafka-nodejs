@@ -4,7 +4,6 @@ const bodyParser = require('body-parser');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const { Kafka } = require('kafkajs');
-const twilio = require('twilio');
 
 const app = express();
 app.use(bodyParser.json());
@@ -23,10 +22,6 @@ const kafka = new Kafka({
 });
 const producer = kafka.producer();
 const consumer = kafka.consumer({ groupId: 'notification-service-group' });
-
-// Twilio setup
-const twilioClient = twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN);
-const TWILIO_FROM = process.env.TWILIO_FROM;
 
 // Simple health
 app.get('/', (req, res) => res.send('Backend up'));
@@ -137,21 +132,6 @@ async function start() {
   app.listen(PORT, () => console.log(`Server listening on ${PORT}`));
 }
 
-async function sendSms(to, body) {
-  if (!TWILIO_FROM || !process.env.TWILIO_SID) {
-    console.log('Twilio not configured. Skipping SMS. Message that would be sent:', { to, body });
-    return;
-  }
-  try {
-    await twilioClient.messages.create({
-      from: TWILIO_FROM,
-      to: to,
-      body: body
-    });
-  } catch (err) {
-    console.error('Twilio send error', err);
-  }
-}
 
 start().catch(err => {
   console.error('Startup error', err);
