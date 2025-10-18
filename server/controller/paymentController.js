@@ -51,11 +51,6 @@ async function verifyPayment(req, res) {
       amount,
       status: 'success'
     };
-  
-    const paymentAllData ={
-      orderId : razorpay_payment_id,
-      paymentId
-    }
 
     await savePayment(paymentData);
 
