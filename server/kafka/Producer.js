@@ -5,12 +5,10 @@ const producer = kafka.producer();
 const sendPaymentNotification = async (payment) => {
   await producer.connect();
   await producer.send({
-    topic: "payment-notifications",
-    messages: [
-      { value: JSON.stringify(payment) }
-    ],
+    topic: "test-topic",
+    messages: [{ value: JSON.stringify(payment) }],
   });
-  console.log("Payment notification sent to Kafka:", payment);
+  console.log("Kafka notification sent:", payment);
   await producer.disconnect();
 };
 

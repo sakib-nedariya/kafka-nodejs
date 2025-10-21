@@ -1,22 +1,31 @@
-import React from "react";
+import React, { useState } from "react";
 import axios from "axios";
+import "../App.css";
 
 const Payment = () => {
+  const [loading, setLoading] = useState(false);
+
   const handlePayment = async () => {
+    setLoading(true);
     try {
-      // Create order in backend
       const orderRes = await axios.post("http://localhost:5000/api/payment/create-order", { amount: 500 });
 
       const options = {
-        key: "YOUR_KEY_ID", // Razorpay Key
+        key: "rzp_test_RW0UtjfH41ooGV",
         amount: orderRes.data.amount,
         currency: orderRes.data.currency,
-        name: "Test Payment",
+        name: "Simple Payment App",
+        description: "Test Payment",
         order_id: orderRes.data.id,
         handler: async function (response) {
-          // Payment success
           await axios.post("http://localhost:5000/api/payment/payment-success", response);
           alert("Payment Successful!");
+          setLoading(false);
+        },
+        modal: {
+          ondismiss: function () {
+            setLoading(false);
+          },
         },
       };
 
@@ -25,13 +34,19 @@ const Payment = () => {
     } catch (err) {
       console.error(err);
       alert("Payment failed!");
+      setLoading(false);
     }
   };
 
   return (
-    <div>
-      <h2>Pay with Razorpay</h2>
-      <button onClick={handlePayment}>Pay ₹500</button>
+    <div className="payment-container">
+      <div className="payment-card">
+        <h2>Complete Your Payment</h2>
+        <p>Pay securely using Razorpay. Amount: <strong>₹500</strong></p>
+        <button onClick={handlePayment} disabled={loading}>
+          {loading ? "Processing..." : "Pay ₹500"}
+        </button>
+      </div>
     </div>
   );
 };
