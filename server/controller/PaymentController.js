@@ -1,6 +1,7 @@
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const db = require('../config/db');
+const { publishMessage } = require('../kafka/Producer');
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -45,13 +46,25 @@ exports.verifyPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid signature" });
     }
 
-    await db.execute(
+    const [result] = await db.execute(
       `INSERT INTO payments (order_id, payment_id, signature, email, name, amount, status)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [razorpay_order_id, razorpay_payment_id, razorpay_signature, email, name, amount, 'SUCCESS']
     );
 
-    res.json({ success: true, message: 'Payment verified and saved' });
+    const message = {
+      paymentId: razorpay_payment_id,
+      orderId: razorpay_order_id,
+      email,   
+      name,
+      amount,
+      status: 'SUCCESS',
+      dbId: result.insertId
+    };
+
+    await publishMessage(process.env.KAFKA_TOPIC, message);
+
+    res.json({ success: true, message: 'Payment verified, saved & email triggered via Kafka' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error' });
